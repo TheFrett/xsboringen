@@ -14,7 +14,8 @@ import os
 class CrossSectionPlot(object):
     Extension = namedtuple('Extension', ['point', 'dx'])
     def __init__(self, cross_section, styles, config,
-        xtickstep=None, ylim=None, xlabel=None, ylabel=None, legend_ncol=1,
+        xtickstep=None, ylim=None, xlabel=None, ylabel=None, dist_txt=None,
+        label_option=None, metadata=False, legend_ncol=1,
         ):
         self.cs = cross_section
         self.styles = styles
@@ -24,7 +25,12 @@ class CrossSectionPlot(object):
         self.ylim = ylim
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.metadata = metadata
+        self.label_option = label_option
         self.legend_ncol = legend_ncol
+        
+        self.dist_txt = dist_txt
+    
 
         self.point_distance = 'bycode'
 
@@ -40,8 +46,12 @@ class CrossSectionPlot(object):
     @property
     def label(self):
         return self.cs.label
+    
+    @property
+    def title(self):
+        return self.cs.title
 
-    def plot_borehole(self, ax, left, borehole, width):
+    def plot_borehole(self, fig, ax, left, borehole, width):
         for segment in borehole:
             height = segment.thickness
             bottom = borehole.z - segment.base
@@ -53,18 +63,33 @@ class CrossSectionPlot(object):
                 **segment_style)
 
         # plot borehole code as text
+        txt = []
         codelabel_position = self.cfg.get('codelabel_position')
         codelabel_fontsize = self.cfg.get('codelabel_fontsize')
         codelabel_color = self.cfg.get('codelabel_color')
         vtrans = transforms.blended_transform_factory(
             ax.transData, ax.transAxes)
-        txt = ax.text(left, codelabel_position, borehole.code,
+        txt.append(ax.text(left, codelabel_position, borehole.code,
             size=codelabel_fontsize,
             color=codelabel_color,
             rotation=90,
             ha='center', va='bottom',
             transform=vtrans,
-            )
+            ))
+        if self.dist_txt[0]:
+            if self.dist_txt[2] == 'double_line':
+                text_label = '' + borehole.dist_dir[2] + '\n' + str(int(np.round(borehole.dist_dir[0]))) + '\n'
+            elif self.dist_txt[2] == 'single_line':
+                text_label = '    ' + borehole.dist_dir[2] + ' ' + str(int(np.round(borehole.dist_dir[0]))) + ' m'
+            
+            txt.append(ax.text(left, borehole.z, text_label,
+                size=codelabel_fontsize-2,
+                color=codelabel_color,
+                rotation=self.dist_txt[1],
+                ha=self.dist_txt[3], va=self.dist_txt[4],
+                zorder=999,
+                ))
+            
 
         return txt
 
@@ -127,6 +152,25 @@ class CrossSectionPlot(object):
             return txt
         else:
             return None
+        
+    def plot_poi(self, ax, point, extensions):        
+        distance = np.array(point[0])
+        plot_distance = distance.copy()        
+        for extension in extensions:
+            plot_distance[distance > extension.point] += extension.dx
+        ax.vlines(plot_distance, point[1].ylim[0], point[1].ylim[1], color='k', zorder=0)
+        
+        txt = []
+        codelabel_fontsize = self.cfg.get('codelabel_fontsize')
+        codelabel_color = self.cfg.get('codelabel_color')
+        
+        txt.append(ax.text(plot_distance, point[1].ylim[1], '  ' + point[1].label,
+                size=codelabel_fontsize-3,
+                color=codelabel_color,
+                rotation=90,
+                ha='center', va='bottom',
+                ))    
+        return txt
 
     def plot_surface(self, ax, surface, extensions):
         distance, coords = zip(*self.cs.discretize(surface.res))
@@ -137,6 +181,20 @@ class CrossSectionPlot(object):
         values = [v for v in surface.sample(coords)]
         style = self.styles['surfaces'].lookup(surface.stylekey)
         sf = ax.plot(plot_distance, values, **style)
+        
+    def plot_refplane(self, ax, refplane, extensions):
+        style = self.styles['referenceplanes'].lookup(refplane.stylekey)
+        if refplane.tied_surface is not None: 
+            distance, coords = zip(*self.cs.discretize(refplane.tied_surface.res))
+            distance = np.array(distance)
+            plot_distance = distance.copy()
+            for extension in extensions:
+                plot_distance[distance > extension.point] += extension.dx
+            tied_surface_values = [v for v in refplane.tied_surface.sample(coords)]
+            bounds = plot_distance[np.isfinite(tied_surface_values)]                    
+            rf = ax.hlines(refplane.value, np.min(bounds), np.max(bounds), **style)
+        else:
+            rf = ax.hlines(refplane.value, ax.get_xlim()[0], ax.get_xlim()[1], **style)
 
     def plot_solid(self, ax, solid, extensions, min_thickness=0.):
         distance, coords = zip(*self.cs.discretize(solid.res))
@@ -154,11 +212,35 @@ class CrossSectionPlot(object):
             )
 
     def plot_label(self, ax):
-        lt = ax.text(0, 1.01, self.label, weight='bold', size='large',
+        if self.label_option == 'both':
+            label_to_add_l = self.label + ' ' + f'({self.cs.wind_label_l})'
+            label_to_add_r = self.label + '` ' + f'({self.cs.wind_label_r})'
+        elif self.label_option == 'label':
+            label_to_add_l = self.label + ' '
+            label_to_add_r = self.label + '` '
+        elif self.label_option == 'wind':
+            label_to_add_l = self.cs.wind_label_l
+            label_to_add_r = self.cs.wind_label_r
+            
+        lt = ax.text(0, 1.01, label_to_add_l , weight='bold', size='large',
              transform=ax.transAxes)
-        rt = ax.text(1, 1.01, self.label + '`', weight='bold', size='large',
+        rt = ax.text(1, 1.01, label_to_add_r, weight='bold', size='large',
              transform=ax.transAxes)
+        
         return lt, rt
+    
+    def plot_metadata(self, ax):
+        labelitems = ['Aantal boringen: ' + str(self.cs.borehole_metadata[0]),
+                      'Aantal sonderingen: ' + str(self.cs.cpt_metadata[0]),
+                      'Boringen / 100 m: ' + str(np.round(self.cs.borehole_metadata[1], 2)),
+                      'Sonderingen / 100 m: ' + str(np.round(self.cs.cpt_metadata[1], 2)),
+                      ]
+        label = '\n'.join(labelitems)
+        meta_text = ax.text(0.01, 0.92, label, 
+                            fontsize=self.cfg.get('codelabel_fontsize'),
+                            transform=ax.transAxes
+                            )
+        return(meta_text)
 
     @classmethod
     def get_extensions(cls, distance, min_distance):
@@ -197,6 +279,13 @@ class CrossSectionPlot(object):
                     ),
                 label
                 ))
+        for label, style in self.styles['referenceplanes'].items():
+            handles_labels.append((
+                plt.Line2D([0, 1], [0, 1],
+                    **style,
+                    ),
+                label
+                ))
         if len(self.cs.boreholes) > 0:
             for label, style in self.styles['segments'].items():
                 handles_labels.append((
@@ -225,7 +314,7 @@ class CrossSectionPlot(object):
             )
         return lgd
 
-    def plot(self, ax):
+    def plot(self, fig, ax):
         # bounding box extra artists (title, legend, labels, etc.)
         bxa = []
 
@@ -241,6 +330,7 @@ class CrossSectionPlot(object):
 
         # borehole distance vector
         distance = np.array([d for d, b in self.cs.boreholes])
+        
 
         # x-axis limits
         xmin, xmax = [0., self.length]
@@ -272,8 +362,8 @@ class CrossSectionPlot(object):
         for borehole, plot_distance in boreholes_plot_distances:
 
             # plot borehole
-            txt = self.plot_borehole(ax, plot_distance, borehole, barwidth)
-            bxa.append(txt)
+            txt = self.plot_borehole(fig, ax, plot_distance, borehole, barwidth)
+            bxa += txt
 
             # plot verticals
             for key in self.styles['verticals'].records:
@@ -319,10 +409,24 @@ class CrossSectionPlot(object):
                 borehole_by_code=borehole_by_code,
                 )
 
+        # plot points of interest
+        for point in self.cs.pois:
+            txt = self.plot_poi(ax,
+                                point=point,
+                                extensions=extensions,
+                                )
+            bxa += txt
+        
         # plot surfaces
         for surface in self.cs.surfaces:
             self.plot_surface(ax,
                 surface=surface,
+                extensions=extensions,
+                )
+            
+        for refplane in self.cs.refplanes:
+            self.plot_refplane(ax,
+                refplane=refplane,
                 extensions=extensions,
                 )
 
@@ -338,6 +442,14 @@ class CrossSectionPlot(object):
             lt, rt = self.plot_label(ax)
             bxa.append(lt)
             bxa.append(rt)
+        
+        # plot metadata
+        if self.metadata:
+            bxa.append(self.plot_metadata(ax))
+            
+        # plot title
+        if self.title is not None:
+            ax.set_title(self.title, y=1.0, pad=-20, fontsize=20)
 
         # axis ticks
         if self.xtickstep is not None:
@@ -361,7 +473,7 @@ class CrossSectionPlot(object):
             ax.autoscale(axis='y')
 
         # grid lines |--|--|--|
-        ax.grid(linestyle='--', linewidth=0.5, color='black', zorder=0)
+        ax.grid(linestyle='--', linewidth=0.5, color='black', alpha=0.5, zorder=0)
 
         # axis labels
         if self.xlabel is not None:
@@ -384,7 +496,7 @@ class CrossSectionPlot(object):
         fig, ax = plt.subplots(figsize=figsize)
 
         # plot cross-section
-        bxa = self.plot(ax)
+        bxa = self.plot(fig, ax)
 
         # save figure
         plt.savefig(imagefile,

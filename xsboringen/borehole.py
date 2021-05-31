@@ -142,6 +142,8 @@ class Borehole(AsDictMixin, CopyMixin, Iterable):
 
         self.segments = segments or []
         self.verticals = verticals or {}
+        
+        self.dist_dir = ()
 
         # set other properties
         for key, value in attrs.items():

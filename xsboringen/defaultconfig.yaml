@@ -54,6 +54,14 @@ admix_fieldnames: {
 # default labels
 defaultlabels: ABCDEFGHIJKLMNOPQRSTUVWXYZ
 
+# default label option
+defaultlabeloption: label
+
+# default wind directions for indication of bearing and range to borehole (required order: the North direction must come last in the list) 
+# e.g. the wind label 'N' is for bearings between 337.5 and 22.5 degrees (i.e. a 45 degree cone around the North direction)
+defaultwindlabels: ['NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'N']
+defaultwinddirs: [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5]
+
 # simplify by segment attributes
 simplify_by: [lithology, sandmedianclass]
 
@@ -138,6 +146,9 @@ styles: {
     },
   surfaces: {
     default: {linestyle: '-', linewidth: 1., color: blue},
+    },
+  referenceplanes: {
+    default: {linestyle: '-', linewidth: 1., color: red},
     },
   solids: {
     default: {facecolor: gray, edgecolor: black},

@@ -7,7 +7,7 @@ try:
 except ImportError:
     idfpy_imported = False
 
-import rasterio
+import xarray as xr
 import numpy as np
 
 from functools import partial
@@ -16,30 +16,20 @@ import os
 
 log = logging.getLogger(os.path.basename(__file__))
 
-# rio.DatasetReader.sample method does not work when trying to sample  
-# outside of the raster's spaial extent. This is a workaround.
-def take_rio_sample(dataset, coords):
-    ''' take sample from raster workaround method (simplified without rasterio.windows.Window) 
-    it yields np.nan if you look outside of the raster's spatial extent'''
-    for x,y in coords:
-        ix, iy = dataset.index(x, y)
-        if ix < dataset.shape[0] and ix >= 0 and iy < dataset.shape[1] and iy >= 0:
-            yield [dataset.read()[0, ix, iy]]
-        else:
-            yield [np.nan]
-
-
 def sample_raster(rasterfile, coords):
-    '''sample raster file at coords'''
     log.debug('reading rasterfile {}'.format(os.path.basename(rasterfile)))
-    with rasterio.open(rasterfile) as src:
-        for value in take_rio_sample(src, coords):
-            if value[0] in src.nodatavals:
-                yield np.nan
-            elif np.isnan(value[0]) and any(np.isnan(src.nodatavals)):
-                yield np.nan
-            else:
-                yield float(value[0])
+    da = xr.open_rasterio(rasterfile).squeeze()
+    x_samples = [c[0] for c in coords]
+    y_samples = [c[1] for c in coords]  
+    profile_y = da.sel(y=y_samples, x=x_samples, method='nearest').values.diagonal()
+    
+    for value in profile_y:
+        if any(np.isclose(value, da.nodatavals)):
+            yield np.nan
+        elif np.isnan(value):
+            yield np.nan
+        else:
+            yield value
 
 
 def sample_idf(idffile, coords):

@@ -31,6 +31,8 @@ class Point(AsDictMixin, CopyMixin):
         self.base = base
 
         self.values = [self.Value(**v) for v in values or []]
+        
+        self.dist_dir = []
 
     def __repr__(self):
         return ('{s.__class__.__name__:}(code={s.code:})').format(
@@ -66,3 +68,14 @@ class Point(AsDictMixin, CopyMixin):
         clone.base = z - self.base
         return clone
 
+class PointsOfInterest():
+    def __init__(self, poi_shape, label, ylim):
+        self.poi_shape = poi_shape  
+        self.label = label
+        self.dist_dir = ()
+        self.ylim = ylim
+        
+    @property
+    def geometry(self):
+        return self.poi_shape['geometry']
+    

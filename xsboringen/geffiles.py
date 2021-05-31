@@ -402,6 +402,8 @@ class GefCPTFile(GefFile):
         # code
         try:
             code = header[self.fieldnames.code][0]
+            if len(code) < 5:
+                code = ''.join(header['PROJECTID']) + '-' + code               
         except KeyError:
             log.warning(
                 (

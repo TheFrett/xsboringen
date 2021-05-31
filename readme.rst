@@ -22,6 +22,7 @@ XSboringen requires Python 3.0 or higher, and has the following dependencies:
 - fiona
 - rasterio
 - shapely
+- xarray
 
 The packages click, pyyaml, numpy and matplotlib can be installed using pip or conda without problems.
 The others can be succesfully installed using conda-forge or by using pip with prebuild wheels (see Christoph Gohlke's website). It is recommended to install gdal before fiona and rasterio are installed.

@@ -7,6 +7,29 @@ import glob
 import sys
 import os
 
+def input_or_default(chainmap_object, keys):
+    """Take a chainmap object and try to find keys until the key combination is found
+    in one of the maps. In this program it allows a fallback to default styles
+    if the styles dict is missing one or more items"""
+    def iterate_keys(chainmap, keys):
+        for key in keys:
+            chainmap = chainmap[key]
+            if key == keys[-1]:
+                return chainmap    
+    
+    chainmap_object_maps = chainmap_object.maps    
+    
+    for i in range(len(chainmap_object_maps)):
+        try:
+            return iterate_keys(chainmap_object_maps[i], keys)
+        except KeyError:
+            try:
+                return iterate_keys(chainmap_object_maps[i+1], keys)
+            except KeyError:
+                continue
+    return None
+        
+
 
 def careful_glob(folder, pattern):
     baseparts = []
@@ -70,6 +93,3 @@ class CarefulFileOpener(object):
     def __exit__(self, type, value, traceback):
         self.close()
         self.handle = None
-
-
-

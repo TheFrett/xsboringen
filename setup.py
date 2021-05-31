@@ -61,6 +61,7 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
 
     # What does your project relate to?
@@ -86,6 +87,7 @@ setup(
         'shapely',
         'fiona',
         'rasterio',
+        'xarray',
         ],
 
     # List additional groups of dependencies here (e.g. development
