@@ -6,6 +6,7 @@ from pathlib import Path
 import glob
 import sys
 import os
+import re
 
 def input_or_default(chainmap_object, keys):
     """Take a chainmap object and try to find keys until the key combination is found
@@ -27,8 +28,7 @@ def input_or_default(chainmap_object, keys):
                 return iterate_keys(chainmap_object_maps[i+1], keys)
             except KeyError:
                 continue
-    return None
-        
+    return None       
 
 
 def careful_glob(folder, pattern):
@@ -93,3 +93,81 @@ class CarefulFileOpener(object):
     def __exit__(self, type, value, traceback):
         self.close()
         self.handle = None
+
+def find_bro_xml_namespaces(ns):
+    common_ns = {}
+    for key, value in ns.items():
+        if 'brocommon' in value:
+            common_ns['brocom'] = value
+        elif 'opengis.net/gml' in value:
+            common_ns['gml'] = value
+        elif 'isbhr-gt' in value or 'dsbhr-gt' in value:
+            common_ns['bhrgt'] = value
+        elif 'bhrgtcommon' in value:
+            common_ns['bhrgtcom'] = value
+        else:
+            common_ns[key] = value
+    return common_ns
+
+
+# Temporary solutions to translate BRO XML data (newer NEN14688) to DINO XML (old NEN5104)
+# Should probably go to a config file later (edit TODO: use already defined bins of the SandmedianClassifier!)
+def sandmedian_to_5104(median):
+    if 62 < median <= 105:
+        return 'ZUF'
+    elif 105 < median <= 150:
+        return 'ZZF'
+    elif 150 < median <= 210:
+        return 'ZMF'
+    elif 210 < median <= 300:
+        return 'ZMG'
+    elif 300 < median <= 420:
+        return 'ZZG'
+    elif 420 < median:
+        return 'ZUG'
+
+# Mag officieel niet vertaald worden door andere grenzen textuurdriehoek
+find_alphanum = re.compile(r'\w+')
+find_capital = re.compile(r'[A-Z]+')
+
+def lithoclass_14688_to_5104(lithoclass_14688):
+    capitals = find_capital.findall(lithoclass_14688) or None
+    main_lithoclass = None
+    admix_intensity = None
+    admix_type = None
+
+    # so if an admixture is given
+    if capitals is not None:
+        starts = []
+        for capital in capitals:
+            find = re.compile(f'{capital}+')
+            starts.append(find.search(lithoclass_14688).start())
+        if len(capitals) == 1:
+            admix_intensity = ''
+            admix_type = lithoclass_14688[:starts[0]]
+            main_lithoclass = lithoclass_14688[starts[0]:][0]
+        elif len(capitals) == 2:
+            admix_intensity = lithoclass_14688[:starts[0]]
+            admix_type = lithoclass_14688[starts[0]:starts[1]]
+            main_lithoclass = lithoclass_14688[starts[1]:][0]
+        elif len(capitals) == 3:
+            admix_intensity = lithoclass_14688[:starts[0]]
+            admix_type = lithoclass_14688[starts[0]:starts[1]]
+            main_lithoclass = lithoclass_14688[starts[0]:starts[1]][0]
+        elif len(capitals) == 4:
+            admix_intensity = lithoclass_14688[:starts[0]]
+            admix_type = lithoclass_14688[starts[0]:starts[1]]
+            main_lithoclass = lithoclass_14688[starts[1]:starts[2]][0]
+        else:
+            print('Warning: NEN14688 admixtures not understood')
+
+    else:
+        main_lithoclass = find_alphanum.match(lithoclass_14688).group()[0].upper()
+
+    # 14688 kent geen 'leem' maar 'silt'
+    if main_lithoclass == 'S':
+        main_lithoclass = 'L'
+
+    return(main_lithoclass, admix_type, admix_intensity)
+
+

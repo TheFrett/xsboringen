@@ -45,6 +45,7 @@ def main(function, inputfile, level):
     # get user config from input file
     userconfig = kwargs.get('config') or {}
 
+
     # chain config
     kwargs['config'] = ChainMap(userconfig, defaultconfig)
 
@@ -57,8 +58,8 @@ def main(function, inputfile, level):
         plot_cross_section(**kwargs)
 
 if __name__ == '__main__':
-    main(['plot', r'n:\Projects\11206500\11206883\B. Measurements and calculations\3D-SSM Purmerend Casus\xsb\boringen_to_csv_shape_plot_langs.yaml']  )
+    main(['plot', r'n:\Projects\11207000\11207155\B. Measurements and calculations\Profielen\boringen_to_csv_shape_plot.yaml'])
 
-  
-['plot', r'n:\Projects\11207000\11207155\B. Measurements and calculations\Profielen\boringen_to_csv_shape_plot.yaml']
+['plot', r'n:\Projects\11206500\11206883\B. Measurements and calculations\3D-SSM Purmerend Casus\xsb\boringen_to_csv_shape_plot_langs.yaml']
+['plot', r'c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\boringen_to_csv_shape_plot.yaml']
 #['plot', r'p:\1204421-kpp-benokust\2021\3-MorfologieKust\3A1 - Geologie\Case studies\Terschelling\xsb\boringen_to_csv_shape_plot.yaml']

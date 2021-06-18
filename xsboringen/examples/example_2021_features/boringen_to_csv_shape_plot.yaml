@@ -1,0 +1,137 @@
+# input data sources (boreholes, CPTs)
+datasources: {
+
+  # borehole and CPT data
+  boreholes: [
+    {
+      format: BRO XML,
+      folder: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\data\BRO XML\,
+      extra_fields: {
+        borehole: [],
+        segments: [
+          {name: tertiaire_bijmenging, match: tertiaryConstituent/@code, dtype: str},
+          {name: humusadmix, match: organicMatterContentClass/@code, dtype: str},
+          
+          ],
+        },
+      },
+    {
+      format: GEF sonderingen,
+      folder: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\data\DINO GEF\,
+      datacolumns: {
+          depth: sondeertrajectlengte,
+          cone_resistance: conusweerstand,
+          friction_ratio: wrijvingsgetal,
+        },
+      },
+    ],
+    
+  # surfaces
+  # surfaces: [
+    # {
+      # name: AHN3 0.5 m DTM,
+      # file: n:\Projects\11207000\11207155\B. Measurements and calculations\Profielen\data\Surface\AHN3_DTM_05.tiff,
+      # res: 0.5,
+      # style: ahn,
+      # },
+    # ],
+  
+  # reference planes
+  referenceplanes: [
+    {
+      name: gw,
+      value: -3,
+      style: gw,
+      },    
+    ], 
+  }
+
+# input geometry
+# line shape for cross-sections
+cross_section_lines: {
+  file: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\shape\profiel.shp,
+  labelfield: label,        # label to indicate cross section start and end point. e.g. when the label is 'A', it wil be profile A --- A'. (unless the labeloption 'wind' is selected, see below)
+  labeloption: both,        # label: only plot label, e.g. A --- A'; wind: only plot wind direction as label, e.g. NW --- SE; both: combination of label and wind direction, e.g. A (NW) --- A' (SE)
+  titlefield: title,        # New title field add title to figure
+}
+
+# points of interest (indicate points of interest along profile by plotting a vertical line if point is within buffer_distance)
+points_of_interest: {
+  file: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\shape\poi.shp,
+  labelfield: name,         # Name that appears at the POI location
+  ylim: [5, 5.5],           # Could be a small line segment to indicate the position of the POI
+}
+
+# result
+result: {
+  csvfile: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\csv\boringen.csv,
+  shapefile: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\shape\boringen.shp,
+  folder: c:\Users\onselen\Projects\UpFun\xsboringen\xsboringen\examples\example_2021_features\doorsnede,
+  classify_sandmedian: True,
+  translate_cpt: True,       # Interpret CPT and use the available lithologies to color the column
+  cpt_classifier: isbt,      # What CPT classifier to use. Default is the ISBT method by Robertson (2010) adjusted for The Netherlands by Fugro
+  simplify: ['GEF CPT',],    # Only specify which objects to simplify here. Could be [GEF CPT, BRO XML Borehole, DINO XML Borehole, GEF Borehole, CSV Borehole]. 
+  min_thickness: 0.2,        # Minimum thickness when simplifying 
+  }
+
+# options
+min_depth: 1.
+buffer_distance: 1000.
+xtickstep: 200.
+ylim: [-5., 7.]
+xlabel: afstand [m]
+ylabel: niveau [m+NAP]
+distance_labels: True
+windlabels: ['NO', 'O', 'ZO', 'Z', 'ZW', 'W', 'NW', 'N'] # Starts with Northeast, ends with North.
+winddirs: [22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5]
+metadata: True
+
+# legend
+config: {
+  styles: {
+    segments: {
+      records: [
+          {key: {lithology: G, }, label: Grind, hatch: 'OO', facecolor: coral, edgecolor: black},
+          {key: {lithology: Z, sandmedianclass: [ZUG, ZGC]}, label: Zand (D50 > 420), hatch: 'oo', facecolor: orange, edgecolor: black},
+          {key: {lithology: Z, sandmedianclass: [ZMG, ZZG]}, label: Zand (D50 210-420), hatch: '..', facecolor: '#f2d600', edgecolor: black},
+          {key: {lithology: Z, sandmedianclass: [ZZF, ZMF, ZFC]}, label: Zand (D50 105-210), facecolor: '#f3e260', edgecolor: black},
+          {key: {lithology: Z, sandmedianclass: [ZUF,]}, label: Zand (D50 62-105), facecolor: '#FFFFB3', edgecolor: black},
+          {key: {lithology: Z, }, label: Zand (D50 NBE), facecolor: '#f2d600', edgecolor: black},
+          {key: {lithology: Z, clayadmix: [KX, K1, K2, K3]}, label: Kleiig zand, facecolor: yellowgreen, edgecolor: black},
+          {key: {lithology: L, }, label: Leem, facecolor: darkkhaki, edgecolor: black},
+          {key: {lithology: K, sandadmix: [ZX, Z2, Z3]}, label: Zandige klei, facecolor: greenyellow, edgecolor: black},
+          {key: {lithology: K, }, label: Klei, facecolor: darkgreen, edgecolor: black},
+          {key: {lithology: K, humusadmix: [HX, H2, H3, sterkOrganisch]}, label: Humeuze klei, facecolor: darkolivegreen, edgecolor: black},
+          {key: {lithology: V, }, label: Veen, facecolor: sienna, edgecolor: black},         
+          {key: {lithology: NBE, sandadmix: [ZX, Z2, Z3]}, label: Opgebracht (zand), hatch: '..', facecolor: grey, edgecolor: black},
+          {key: {lithology: NBE,}, label: Opgebracht/NBE, facecolor: grey, edgecolor: black},
+          {key: {lithology: GM,}, label: Geen monster, facecolor: white, hatch: 'XX', edgecolor: black},   
+        ],
+      default: {label: Onbekend, facecolor: white, edgecolor: black},
+      },
+
+  verticals: {
+    records: [
+      {key: cone_resistance, label: conusweerstand, linestyle: '-', linewidth: 0.5, color: blue},
+      {key: friction_ratio, label: wrijvingsgetal, linestyle: '-', linewidth: 0.5, color: magenta},
+      ],
+    default: { label: onbekend, linestyle: '-', linewidth: 0.5, color: gray},
+    },
+
+  surfaces: {
+    records: [
+    {key: ahn, label: AHN3 0.5 m DTM, linestyle: '-', linewidth: 3.5, color: k, zorder: 2},
+      ],
+    },
+    
+  referenceplanes: {
+    records: [
+    {key: gw, label: Grondwaterstand, linestyle: 'dashed', linewidth: 1.5, color: blue, zorder: 3},
+      ],
+    },
+
+  solids: {
+    default: {facecolor: gray, edgecolor: black},
+    },
+  },
+}

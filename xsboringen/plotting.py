@@ -153,7 +153,7 @@ class CrossSectionPlot(object):
         else:
             return None
         
-    def plot_poi(self, ax, point, extensions):        
+    def plot_poi(self, ax, point, extensions):    
         distance = np.array(point[0])
         plot_distance = distance.copy()        
         for extension in extensions:
@@ -162,7 +162,7 @@ class CrossSectionPlot(object):
         
         txt = []
         codelabel_fontsize = self.cfg.get('codelabel_fontsize')
-        codelabel_color = self.cfg.get('codelabel_color')
+        codelabel_color = self.cfg.get('codelabel_color')            
         
         txt.append(ax.text(plot_distance, point[1].ylim[1], '  ' + point[1].label,
                 size=codelabel_fontsize-3,
@@ -411,11 +411,12 @@ class CrossSectionPlot(object):
 
         # plot points of interest
         for point in self.cs.pois:
-            txt = self.plot_poi(ax,
-                                point=point,
-                                extensions=extensions,
-                                )
-            bxa += txt
+            if point[1].label is not None:
+                txt = self.plot_poi(ax,
+                                    point=point,
+                                    extensions=extensions,
+                                    )
+                bxa += txt
         
         # plot surfaces
         for surface in self.cs.surfaces:

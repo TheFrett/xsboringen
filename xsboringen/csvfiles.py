@@ -17,7 +17,7 @@ log = logging.getLogger(os.path.basename(__file__))
 
 
 def boreholes_from_csv(folder,
-        fieldnames=None, extra_fields=None,
+        fieldnames=('code', 'depth', 'x', 'y', 'z', 'top', 'base'), extra_fields=None,
         delimiter=',', decimal='.'
         ):
     csvfiles = utils.careful_glob(folder, '*.csv')

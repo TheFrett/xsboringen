@@ -26,6 +26,7 @@ dependencies:
   - fiona
   - rasterio
   - shapely
+  - xarray
 
 The packages click, pyyaml, numpy and matplotlib can be installed using
 pip or conda without problems. The others can be succesfully installed

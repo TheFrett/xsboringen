@@ -81,8 +81,9 @@ def plot_cross_section(**kwargs):
 
     # translate CPT to lithology if needed
     if result.get('translate_cpt', False):
+        ruletype = result.get('cpt_classifier') or 'isbt'
         table = config['cpt_classification']
-        lithologyclassifier = LithologyClassifier(table)
+        lithologyclassifier = LithologyClassifier(table, ruletype=ruletype)
         boreholes = (
             b.to_lithology(lithologyclassifier, admixclassifier)
             for b in boreholes
@@ -97,11 +98,13 @@ def plot_cross_section(**kwargs):
             )
 
     # simplify if needed
-    if result.get('simplify', False):
+    if result.get('simplify'):
         min_thickness = result.get('min_thickness')
         by_legend = lambda s: {'record': segmentstyles.lookup(s)}
+
         boreholes = (
-            b.simplified(min_thickness=min_thickness, by=by_legend)
+            b.simplified(min_thickness=min_thickness, by=by_legend) if b.format in result.get('simplify') 
+            else b
             for b in boreholes
             )
 

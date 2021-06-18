@@ -31,8 +31,7 @@ def boreholes_to_shape(boreholes, shapefile,
 
     # shapefile schema
     schema = Borehole.schema.copy()
-    if fields is not None:
-        schema['properties'].extend(fields)
+    schema['properties'].extend([['format', 'str'], ['source', 'str']])
 
     # shapefile write arguments
     shape_kwargs = {

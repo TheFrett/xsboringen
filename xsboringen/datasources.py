@@ -4,7 +4,7 @@
 
 from xsboringen.csvfiles import boreholes_from_csv, points_from_csv
 from xsboringen.geffiles import boreholes_from_gef, cpts_from_gef
-from xsboringen.xmlfiles import boreholes_from_xml
+from xsboringen.xmlfiles import dino_boreholes_from_xml, bro_boreholes_from_xml
 
 from pathlib import Path
 from itertools import chain
@@ -17,15 +17,22 @@ def boreholes_from_sources(datasources, admixclassifier=None):
     readers = []
     for datasource in datasources:
         if datasource['format'] == 'Dinoloket XML 1.4':
-            readers.append(boreholes_from_xml(
+            readers.append(dino_boreholes_from_xml(
                 folder=Path(datasource['folder']),
                 version=1.4,
                 extra_fields=datasource.get('extra_fields'),
+                use_filename=datasource.get('use_filename_as_id') or False,
+                ))
+        elif datasource['format'] == 'BRO XML':
+            readers.append(bro_boreholes_from_xml(
+                folder=Path(datasource['folder']),
+                extra_fields=datasource.get('extra_fields'),
+                use_filename=datasource.get('use_filename_as_id') or False,
                 ))
         elif datasource['format'] == 'CSV boringen':
             readers.append(boreholes_from_csv(
                 folder=Path(datasource['folder']),
-                fieldnames=datasource['fieldnames'],
+                #fieldnames=datasource.get('fieldnames'),
                 extra_fields=datasource.get('extra_fields'),
                 delimiter=datasource.get('delimiter', ','),
                 decimal=datasource.get('decimal', '.'),
@@ -35,12 +42,14 @@ def boreholes_from_sources(datasources, admixclassifier=None):
                 folder=Path(datasource['folder']),
                 classifier=admixclassifier,
                 fieldnames=datasource.get('fieldnames'),
+                use_filename=datasource.get('use_filename_as_id') or False
                 ))
         elif datasource['format'] == 'GEF sonderingen':
             readers.append(cpts_from_gef(
                 folder=Path(datasource['folder']),
                 fieldnames=datasource.get('fieldnames'),
                 datacolumns=datasource['datacolumns'],
+                use_filename=datasource.get('use_filename_as_id') or False
                 ))
         else:
             log.warning((

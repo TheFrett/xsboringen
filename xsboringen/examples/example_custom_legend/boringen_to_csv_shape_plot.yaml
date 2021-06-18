@@ -5,7 +5,7 @@ datasources: {
   boreholes: [
     {
       format: Dinoloket XML 1.4,
-      folder: data\Boormonsterprofiel_Geologisch booronderzoek,
+      folder: c:\Users\onselen\Documents\Upfun\xsboringen\xsboringen\examples\example_custom_legend\data\Boormonsterprofiel_Geologisch booronderzoek,
       extra_fields: {
         borehole: [],
         segments: [
@@ -23,14 +23,14 @@ datasources: {
 # input geometry
 # line shape for cross-sections
 cross_section_lines: {
-  file: shape\doorsnede.shp,
+  file: c:\Users\onselen\Documents\Upfun\xsboringen\xsboringen\examples\example_custom_legend\shape\doorsnede.shp,
 }
 
 # result
 result: {
-  csvfile: csv\boringen.csv,
-  shapefile: shape\boringen.shp,
-  folder: doorsnede,
+  csvfile: c:\Users\onselen\Documents\Upfun\xsboringen\xsboringen\examples\example_custom_legend\csv\boringen.csv,
+  shapefile: c:\Users\onselen\Documents\Upfun\xsboringen\xsboringen\examples\example_custom_legend\shape\boringen.shp,
+  folder: c:\Users\onselen\Documents\Upfun\xsboringen\xsboringen\examples\example_custom_legend\doorsnede\,
   classify_sandmedian: True,
   simplify: True,
   min_thickness: 0.2,
@@ -42,10 +42,10 @@ result: {
   }
 
 # options
-min_depth: 10.
+min_depth: 5.
 buffer_distance: 2000.
 xtickstep: 200.
-ylim: [0., 50.]
+ylim: [0., 20.]
 xlabel: afstand [m]
 ylabel: niveau [m+NAP]
 
