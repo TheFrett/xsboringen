@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 import matplotlib.patheffects as PathEffects
 from matplotlib import pyplot as plt

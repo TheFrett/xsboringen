@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 import copy
 

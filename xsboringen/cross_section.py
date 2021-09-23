@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from shapely.geometry import asShape, Point
 from math import atan2, degrees
 import numpy as np
+import pandas as pd
 
 
 class CrossSection(object):
@@ -123,6 +125,27 @@ class CrossSection(object):
     def sort(self):
         self.boreholes = [b for b in sorted(self.boreholes)]
         self.points = [p for p in sorted(self.points)]
+
+    def filter_close_boreholes(self, distance):
+        self.borehole_table = pd.DataFrame({'code': [b[1].code for b in self.boreholes],
+                             'xc': [b[1].x for b in self.boreholes],
+                             'yc': [b[1].y for b in self.boreholes],
+                             'priority': [b[1].priority for b in self.boreholes],
+                             'eudist': [b[1].dist_dir[0] for b in self.boreholes],
+                             'lndist': [b[0] for b in self.boreholes],
+                             })
+
+        to_drop = []
+        for i, b in self.borehole_table.iterrows():
+            dist = np.sqrt((self.borehole_table['xc'] - b.xc)**2 + (self.borehole_table['yc'] - b.yc)**2)
+            indexes_to_keep = np.invert(self.borehole_table.index.isin(to_drop + [i]))
+            candidates = self.borehole_table[indexes_to_keep][dist<distance]
+            for j, candidate in candidates.iterrows():
+                if candidate.priority > b.priority:
+                    # self.borehole_table.drop(index=j, inplace=True)
+                    to_drop.append(j)
+        
+        self.boreholes = [b for i, b in enumerate(self.boreholes) if not i in to_drop]
 
     def add_surface(self, surface):
         self.surfaces.append(surface)

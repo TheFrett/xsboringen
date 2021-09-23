@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from xsboringen.borehole import Borehole
 

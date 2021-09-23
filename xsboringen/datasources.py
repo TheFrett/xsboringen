@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from xsboringen.csvfiles import boreholes_from_csv, points_from_csv
 from xsboringen.geffiles import boreholes_from_gef, cpts_from_gef
@@ -22,12 +23,14 @@ def boreholes_from_sources(datasources, admixclassifier=None):
                 version=1.4,
                 extra_fields=datasource.get('extra_fields'),
                 use_filename=datasource.get('use_filename_as_id') or False,
+                priority=datasource.get('priority') or 0,
                 ))
         elif datasource['format'] == 'BRO XML':
             readers.append(bro_boreholes_from_xml(
                 folder=Path(datasource['folder']),
                 extra_fields=datasource.get('extra_fields'),
                 use_filename=datasource.get('use_filename_as_id') or False,
+                priority=datasource.get('priority') or 0,
                 ))
         elif datasource['format'] == 'CSV boringen':
             readers.append(boreholes_from_csv(
@@ -42,14 +45,16 @@ def boreholes_from_sources(datasources, admixclassifier=None):
                 folder=Path(datasource['folder']),
                 classifier=admixclassifier,
                 fieldnames=datasource.get('fieldnames'),
-                use_filename=datasource.get('use_filename_as_id') or False
+                use_filename=datasource.get('use_filename_as_id') or False,
+                priority=datasource.get('priority') or 0,
                 ))
         elif datasource['format'] == 'GEF sonderingen':
             readers.append(cpts_from_gef(
                 folder=Path(datasource['folder']),
                 fieldnames=datasource.get('fieldnames'),
                 datacolumns=datasource['datacolumns'],
-                use_filename=datasource.get('use_filename_as_id') or False
+                use_filename=datasource.get('use_filename_as_id') or False,
+                priority=datasource.get('priority') or 0,
                 ))
         else:
             log.warning((

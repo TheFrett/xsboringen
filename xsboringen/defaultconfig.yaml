@@ -74,22 +74,22 @@ shapefile: {
 # config for cross-section plot class
 cross_section_plot: {
   # default figure size (width, height) [inch]
-  figure_size: [21, 11.7],
+  figure_size: [21, 11.7], # default [21, 11.7]
 
   # default figure DPI
-  figure_dpi: 200,
+  figure_dpi: 250, #default 200
 
   # bars width compared to figure width
-  barwidth_factor: 1.5e-2,
+  barwidth_factor: 1.5e-2, # default 1.5e-2
 
   # bars width compared to figure width
-  verticalwidth_factor: 1.5e-2,
+  verticalwidth_factor: 1.5e-2, #default 1.5e-2
 
   # minimum distance compared to figure width
-  min_distance_factor: 3.e-2,
+  min_distance_factor: 3.e-2, #default 3e-2
 
   # minimum distance to xmin, xmax compared to figure width
-  min_limit_factor: 4.e-2,
+  min_limit_factor: 4.e-2,  #default 4e-2
 
   # position of borehole code labels compared to axes (0=bottom, 1=top)
   codelabel_position: 1.01,

@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from collections import namedtuple
 import math
@@ -46,7 +47,7 @@ class Robertson_ISBT_NL(LithologyRule):
     def test(self, rf, qc):          
         try:
             i_c = math.sqrt((3.47-math.log10(qc/0.1))**2+(math.log10(rf)+1.22)**2)
-        except ValueError:
+        except Exception:
             return False
         boundaries=[1.6, 2.0, 2.2, 2.6, 2.95, 3.6] 
         

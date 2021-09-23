@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from pathlib import Path
 import glob
@@ -94,6 +95,23 @@ class CarefulFileOpener(object):
         self.close()
         self.handle = None
 
+def find_bro_xml_undeclared_namespaces(common_ns, xml_required_namespaces=['brocom', 'gml', 'bhrgt', 'bhrgtcom']):
+    """
+    if namespaces are not properly declared, fall back to these defaults. These may need to be 
+    updated as BRO standards evolve
+    """
+    default_ns = {'bhrgt': 'http://www.broservices.nl/xsd/isbhr-gt/1.0',
+                  'brocom': 'http://www.broservices.nl/xsd/brocommon/3.0',
+                  'gml': 'http://www.opengis.net/gml/3.2',
+                  'bhrgtcom': 'http://www.broservices.nl/xsd/bhrgtcommon/1.0'}
+
+    for ns in xml_required_namespaces:
+        n = common_ns.get(ns) or None
+        if n is None:
+            common_ns[ns] = default_ns[ns]
+    
+    return common_ns       
+
 def find_bro_xml_namespaces(ns):
     common_ns = {}
     for key, value in ns.items():
@@ -107,30 +125,52 @@ def find_bro_xml_namespaces(ns):
             common_ns['bhrgtcom'] = value
         else:
             common_ns[key] = value
+    
+    common_ns = find_bro_xml_undeclared_namespaces(common_ns)
+
+    # Optional keys that are less common, but e.g. Fugro has them in their exported files
+    # set_common = set(common_ns.keys())
+    # set_ns = set(ns.keys())
+    # ns_diff = set_ns.difference(set_common)
+
+    # for nsd in ns_diff:
+    #     common_ns[nsd] = ns[nsd]
+
     return common_ns
 
 
 # Temporary solutions to translate BRO XML data (newer NEN14688) to DINO XML (old NEN5104)
 # Should probably go to a config file later (edit TODO: use already defined bins of the SandmedianClassifier!)
-def sandmedian_to_5104(median):
-    if 62 < median <= 105:
-        return 'ZUF'
-    elif 105 < median <= 150:
-        return 'ZZF'
-    elif 150 < median <= 210:
-        return 'ZMF'
-    elif 210 < median <= 300:
-        return 'ZMG'
-    elif 300 < median <= 420:
-        return 'ZZG'
-    elif 420 < median:
-        return 'ZUG'
+def sandmedian_to_5104(median, type='int'):
+    if type == 'int':
+        if 62 < median <= 105:
+            return 'ZUF'
+        elif 105 < median <= 150:
+            return 'ZZF'
+        elif 150 < median <= 210:
+            return 'ZMF'
+        elif 210 < median <= 300:
+            return 'ZMG'
+        elif 300 < median <= 420:
+            return 'ZZG'
+        elif 420 < median:
+            return 'ZUG'
+    elif type == 'str':
+        if median.lower() == 'fijn':
+            return 'ZMF'
+        elif median.lower() == 'middelgrof':
+            return 'ZMG'
+
+def is_valid_lithoclass(lithoclass):
+    return main_lithoclass in ('')
 
 # Mag officieel niet vertaald worden door andere grenzen textuurdriehoek
 find_alphanum = re.compile(r'\w+')
 find_capital = re.compile(r'[A-Z]+')
 
 def lithoclass_14688_to_5104(lithoclass_14688):
+    if lithoclass_14688 == 'zandMetKeitjes':
+        return('Z', None, None)
     capitals = find_capital.findall(lithoclass_14688) or None
     main_lithoclass = None
     admix_intensity = None

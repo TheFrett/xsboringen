@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from xsboringen.borehole import Borehole, Segment, Vertical
 from xsboringen.cpt import CPT
@@ -11,23 +12,24 @@ from pathlib import Path
 import textwrap
 import logging
 import os
+from tqdm import tqdm
 
 log = logging.getLogger(os.path.basename(__file__))
 
 
-def boreholes_from_gef(folder, classifier=None, fieldnames=None):
+def boreholes_from_gef(folder, classifier=None, fieldnames=None, use_filename=False, priority=0):
     geffiles = utils.careful_glob(folder, '*.gef')
-    for geffile in geffiles:
-        gef = GefBoreholeFile(geffile, classifier, fieldnames)
+    for geffile in tqdm(geffiles, desc='Reading GEF Boreholes'):
+        gef = GefBoreholeFile(geffile, classifier, fieldnames, use_filename=use_filename, priority=priority)
         borehole = gef.to_borehole()
         if borehole is not None:
             yield borehole
 
 
-def cpts_from_gef(folder, datacolumns=None, classifier=None, fieldnames=None):
+def cpts_from_gef(folder, datacolumns=None, classifier=None, fieldnames=None, use_filename=False, priority=0):
     geffiles = utils.careful_glob(folder, '*.gef')
-    for geffile in geffiles:
-        gef = GefCPTFile(geffile, classifier, fieldnames)
+    for geffile in tqdm(geffiles, desc='Reading GEF CPTs'):
+        gef = GefCPTFile(geffile, classifier, fieldnames, use_filename=use_filename, priority=priority)
         cpt = gef.to_cpt(datacolumns)
         if cpt is not None:
             yield cpt
@@ -87,11 +89,14 @@ class GefFile(object):
         classifier=None,
         fieldnames=None,
         measurementvars=None,
+        use_filename=False,
+        priority=0
         ):
         self.file = Path(geffile).resolve()
         self.attrs = {
             'source': self.file.name,
             'format': self._format,
+            'priority': priority,
             }
         self.classifier = classifier
 
@@ -106,6 +111,8 @@ class GefFile(object):
             self.measurementvars = self.MeasurementVars(
                 **self._defaultmeasurementvars
                 )
+
+        self.use_filename = use_filename
 
     @staticmethod
     def safe_int(s):
@@ -158,7 +165,10 @@ class GefFile(object):
             elif var == 'MEASUREMENTTEXT':
                 if var not in header:
                     header[var] = {}
-                number, value, name = values.split(',', 2)
+                try:
+                    number, value, name = values.split(',', 2)
+                except ValueError:
+                    number=-1; value='0'; name=''
                 measurementtext = cls.MeasurementText(
                     cls.safe_int(number),
                     value.strip(),
@@ -275,16 +285,18 @@ class GefBoreholeFile(GefFile):
                 for segment in segments:
                     segment.update(self.classifier.classify(segment.lithology))
         # code
-        try:
-            code = header[self.fieldnames.code][0].strip()
-
-        except KeyError:
-            log.warning(
-                (
-                    'no value for \'{s.fieldnames.code:}\' in {s.file.name:},\n'
-                    'skipping this file'
-                    ).format(s=self))
-            return
+        if self.use_filename:
+            code = self.attrs['source'].split('.')[0]
+        else:
+            try:
+                code = header[self.fieldnames.code][0].strip()
+            except KeyError:
+                log.warning(
+                    (
+                        'no value for \'{s.fieldnames.code:}\' in {s.file.name:},\n'
+                        'skipping this file'
+                        ).format(s=self))
+                return
 
         # depth
         try:
@@ -400,17 +412,20 @@ class GefCPTFile(GefFile):
                 )
 
         # code
-        try:
-            code = header[self.fieldnames.code][0]
-            if len(code) < 5:
-                code = ''.join(header['PROJECTID']) + '-' + code               
-        except KeyError:
-            log.warning(
-                (
-                    'no value for \'{s.fieldnames.code:}\' in {s.file.name:},\n'
-                    'skipping this file'
-                    ).format(s=self))
-            return
+        if self.use_filename:
+            code = self.attrs['source'].split('.')[0]
+        else:
+            try:
+                code = header[self.fieldnames.code][0]
+                if len(code) < 5:
+                    code = ''.join(header['PROJECTID']) + '-' + code               
+            except KeyError:
+                log.warning(
+                    (
+                        'no value for \'{s.fieldnames.code:}\' in {s.file.name:},\n'
+                        'skipping this file'
+                        ).format(s=self))
+                return
 
         # depth
         try:

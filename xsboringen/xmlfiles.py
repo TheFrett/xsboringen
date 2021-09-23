@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# BRO XML implementation by Erik van Onselen, Deltares
 
 from xsboringen.borehole import Borehole, Segment
 from xsboringen import utils
@@ -13,22 +14,23 @@ import glob
 import csv
 import os
 import re
+from tqdm import tqdm
 
 log = logging.getLogger(os.path.basename(__file__))
 
 
-def dino_boreholes_from_xml(folder, version, extra_fields, use_filename):
+def dino_boreholes_from_xml(folder, version, extra_fields, use_filename, priority):
     xmlfiles = utils.careful_glob(folder, '*{:.1f}.xml'.format(version))
-    for xmlfile in xmlfiles:
-        xml = XMLBoreholeFile(xmlfile, 'Dino XML Borehole')
+    for xmlfile in tqdm(xmlfiles, desc='Reading Dino XML Boreholes'):
+        xml = XMLBoreholeFile(xmlfile, 'Dino XML Borehole', priority)
         borehole = xml.dino_to_borehole(extra_fields, use_filename)
         if borehole is not None:
             yield borehole
 
-def bro_boreholes_from_xml(folder, extra_fields, use_filename):
+def bro_boreholes_from_xml(folder, extra_fields, use_filename, priority):
     xmlfiles = utils.careful_glob(folder, '*.xml')
-    for xmlfile in xmlfiles:
-        xml = XMLBoreholeFile(xmlfile, 'BRO XML Borehole')
+    for xmlfile in tqdm(xmlfiles, desc='Reading BRO XML Boreholes'):
+        xml = XMLBoreholeFile(xmlfile, 'BRO XML Borehole', priority)
         borehole = xml.bro_to_borehole(extra_fields, use_filename)
         if borehole is not None:
             yield borehole
@@ -38,25 +40,27 @@ class XMLFile(object):
     # format field
     _format = None
 
-    def __init__(self, xmlfile, format):
+    def __init__(self, xmlfile, format, priority):
         self.file = Path(xmlfile).resolve()
         self._format = format
         self.attrs = {
             'source': self.file.name,
             'format': self._format,
+            'priority': priority,
             }
 
         log.debug('reading {s.file.name:}'.format(s=self))
         self.root = ElementTree.parse(xmlfile).getroot()
 
-        # Find namespaces (used in BRO XML format)
-        ns = dict([
-        node for _, node in ElementTree.iterparse(
-         xmlfile, events=['start-ns'])
-        ])
+        if format == 'BRO XML Borehole':
+            # Find namespaces (used in BRO XML format)
+            ns = dict([
+            node for _, node in ElementTree.iterparse(
+            xmlfile, events=['start-ns'])
+            ])
 
-        # Convert namespaces to common names (e.g. Wiertsema & Partners uses different namespace ids than BROloket)
-        self.ns = utils.find_bro_xml_namespaces(ns)
+            # Convert namespaces to common names (e.g. Wiertsema & Partners uses different namespace ids than BROloket)
+            self.ns = utils.find_bro_xml_namespaces(ns)
 
 
 class XMLBoreholeFile(XMLFile):
@@ -178,6 +182,8 @@ class XMLBoreholeFile(XMLFile):
                 if to_5104:
                     sandmedianclass = utils.sandmedian_to_5104(attrs['sandmedian'])
             else:
+                if to_5104 and sandmedianclass is not None:
+                    sandmedianclass = utils.sandmedian_to_5104(sandmedianclass, type='str')
                 attrs['sandmedian'] = None
             
             # Extra fields only possible in bhrgtcom:soil, not bhrgtcom:layer.
@@ -274,16 +280,17 @@ class XMLBoreholeFile(XMLFile):
 
         # code
         survey = self.find_child(self.root, self.ns, ['bhrgt:sourceDocument/bhrgt:BHR_GT_CompleteReport_V1',
-                                                  'bhrgt:dispatchDocument/bhrgt:BHR_GT_O'])
+                                                  'bhrgt:dispatchDocument/bhrgt:BHR_GT_O',
+                                                  'bhrgt:sourceDocument/bhrgt:BHR_GT_StartReport_V1'])
         if use_filename:
             code = self.attrs['source'].split('.')[0]
         else: 
             if survey.find('brocom:broId', self.ns) is None:                                         
-                code = survey.attrib.get('{'+self.ns['gml']+'}id')
+                #code = survey.attrib.get('{'+self.ns['gml']+'}id')
+                code = self.root.find('brocom:requestReference', self.ns).text
             else:
                 code = survey.find('brocom:broId', self.ns).text
-
-
+    
         # timestamp of borehole
         date = survey.find('bhrgt:boring/bhrgtcom:boringEndDate/brocom:date', self.ns).text.split('-')
         try:

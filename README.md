@@ -7,6 +7,7 @@ be exported to CSV or shapefile and plotting 2D cross-sections. The
 following input formats are supported:
 
   - Dinoloket XML 1.4 (boreholes only)
+  - BRO XML files (boreholes only)
   - Dinoloket GEF (boreholes and CPT's)
   - CSV (boreholes only)
 
@@ -71,12 +72,3 @@ xsb plot plot.yaml
 
 plot.yaml file contains references to the input datasources and the
 output folder. See the examples folder.
-
-## Example 2-D cross-sections
-
-Click to view at full
-resolution.
-
-![image](https://raw.githubusercontent.com/tomvansteijn/xsboringen/dev/xsboringen/examples/misc/cross_section_Kr.png)
-
-![image](https://raw.githubusercontent.com/tomvansteijn/xsboringen/dev/xsboringen/examples/misc/cross_section_Tn.png)

@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # Tom van Steijn, Royal HaskoningDHV
+# Erik van Onselen, Deltares
 
 from xsboringen import cross_section
 from xsboringen.calc import SandmedianClassifier, AdmixClassifier, LithologyClassifier
@@ -212,8 +213,10 @@ def plot_cross_section(**kwargs):
             buffer_distance=buffer_distance,
             )
 
-        # add boreholes to cross-section
+        # add boreholes to cross-section and optionally filter points too close to eachother
         cs.add_boreholes(boreholes)
+        if result.get('min_borehole_dist') is not None:
+            cs.filter_close_boreholes(result.get('min_borehole_dist'))
 
         # add points to cross_section
         cs.add_points(points)
